@@ -7,8 +7,8 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 const players = {};
-let gameState = Array(9).fill(null); // Represents the Tic Tac Toe board
-let currentPlayer = 'X'; // X starts first
+let gameState = Array(9).fill(null);
+let currentPlayer = 'X';
 
 wss.on('connection', (ws) => {
   const playerId = Object.keys(players).length + 1;
@@ -17,15 +17,14 @@ wss.on('connection', (ws) => {
 
   console.log(`Player ${playerId} connected`);
 
-  // Assign X or O to the player
   const playerSymbol = playerId === 1 ? 'X' : 'O';
-  ws.send(JSON.stringify({ type: 'assignSymbol', symbol: playerSymbol }));
+  ws.send(JSON.stringify({ type: 'assignSymbol', playerId, symbol: playerSymbol }));
 
-  // Send initial game state
   ws.send(JSON.stringify({ type: 'updateGameState', gameState }));
 
-  // Notify players when the second player joins
-  if (Object.keys(players).length === 2) {
+  if (Object.keys(players).length === 1) {
+    broadcast(JSON.stringify({ type: 'waitingForPlayer' }));
+  } else if (Object.keys(players).length === 2) {
     broadcast(JSON.stringify({ type: 'gameStart', currentPlayer }));
   }
 
@@ -36,7 +35,7 @@ wss.on('connection', (ws) => {
       const { index } = data;
       if (gameState[index] === null && currentPlayer === playerSymbol) {
         gameState[index] = playerSymbol;
-        currentPlayer = currentPlayer === 'X' ? 'O' : 'X'; // Switch turns
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
 
         broadcast(JSON.stringify({ type: 'updateGameState', gameState, currentPlayer }));
 
@@ -49,6 +48,9 @@ wss.on('connection', (ws) => {
           resetGame();
         }
       }
+    } else if (data.type === 'restart') {
+      resetGame();
+      broadcast(JSON.stringify({ type: 'updateGameState', gameState, currentPlayer }));
     }
   });
 
@@ -56,6 +58,9 @@ wss.on('connection', (ws) => {
     console.log(`Player ${playerId} disconnected`);
     delete players[playerId];
     resetGame();
+    if (Object.keys(players).length === 1) {
+      broadcast(JSON.stringify({ type: 'waitingForPlayer' }));
+    }
   });
 });
 
@@ -86,7 +91,6 @@ function checkWinner() {
 function resetGame() {
   gameState = Array(9).fill(null);
   currentPlayer = 'X';
-  broadcast(JSON.stringify({ type: 'updateGameState', gameState }));
 }
 
 server.listen(8080, () => {
