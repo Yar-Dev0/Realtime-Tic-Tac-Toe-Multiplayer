@@ -1,5 +1,3 @@
-Here’s an updated `README.md` file for your **Realtime Tic-Tac-Toe Multiplayer** project. This file provides an overview of the project, setup instructions, and how to play the game.
-
 ---
 
 # Realtime Tic-Tac-Toe Multiplayer
