@@ -4,90 +4,121 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tic Tac Toe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Arial', sans-serif;
+      font-family: 'Press Start 2P', cursive;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
       margin: 0;
       background: linear-gradient(135deg, #1e3c72, #2a5298);
+      background-size: 300% 300%;
+      animation: gradientMove 6s infinite alternate;
       color: #fff;
-    }
-    .container {
       text-align: center;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: left; }
+      100% { background-position: right; }
+    }
+
+    .container {
       background: rgba(255, 255, 255, 0.1);
       padding: 2rem;
       border-radius: 15px;
-      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
       backdrop-filter: blur(10px);
     }
+
     h1 {
-      font-size: 2.5rem;
+      font-size: 2rem;
       margin-bottom: 1rem;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.6);
     }
+
     .players {
       display: flex;
-      justify-content: space-around;
+      justify-content: space-between;
+      font-size: 1rem;
       margin-bottom: 1.5rem;
     }
-    .player {
-      font-size: 1.2rem;
-      font-weight: bold;
-    }
+
     .board {
       display: grid;
+      justify-content: center;
       grid-template-columns: repeat(3, 100px);
       grid-template-rows: repeat(3, 100px);
       gap: 10px;
       margin: 0 auto;
     }
+
     .cell {
       width: 100px;
       height: 100px;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 2rem;
+      font-size: 2.5rem;
       font-weight: bold;
       background: rgba(255, 255, 255, 0.2);
-      border: 2px solid rgba(255, 255, 255, 0.3);
+      border: 3px solid rgba(255, 255, 255, 0.3);
       border-radius: 10px;
       cursor: pointer;
-      transition: background 0.3s ease, transform 0.2s ease;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(255, 255, 255, 0.2);
     }
+
     .cell:hover {
-      background: rgba(255, 255, 255, 0.3);
-      transform: scale(1.05);
+      background: rgba(255, 255, 255, 0.4);
+      transform: scale(1.1);
+      box-shadow: 0 4px 20px rgba(255, 255, 255, 0.4);
     }
+
     .cell.disabled {
       pointer-events: none;
       opacity: 0.7;
     }
+
+    .winner {
+      background: rgba(0, 255, 0, 0.5) !important;
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.8) !important;
+    }
+
     .status {
       margin-top: 1.5rem;
-      font-size: 1.2rem;
+      font-size: 1rem;
       font-weight: bold;
+      text-shadow: 1px 1px 4px rgba(255, 255, 255, 0.6);
     }
+
     .restart-button {
       margin-top: 1.5rem;
-      padding: 0.5rem 1rem;
+      padding: 0.8rem 1.5rem;
       font-size: 1rem;
       font-weight: bold;
       color: #fff;
-      background: #ff6f61;
+      background: linear-gradient(135deg, #ff416c, #ff4b2b);
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
       cursor: pointer;
-      transition: background 0.3s ease;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(255, 0, 0, 0.4);
     }
+
     .restart-button:hover {
-      background: #ff3b2f;
+      background: linear-gradient(135deg, #ff1a4d, #ff2200);
+      transform: scale(1.1);
+      box-shadow: 0 4px 20px rgba(255, 0, 0, 0.6);
     }
+
     .restart-button:disabled {
-      background: #ccc;
+      background: #555;
       cursor: not-allowed;
+      opacity: 0.7;
     }
   </style>
 </head>
@@ -119,57 +150,41 @@
   
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log(data);
   
       if (data.type === 'assignSymbol') {
         mySymbol = data.symbol;
         document.getElementById(`player${data.playerId}Symbol`).textContent = mySymbol;
         document.getElementById('status').textContent = `You are Player ${data.playerId} (${mySymbol})`;
       } else if (data.type === 'updateGameState') {
-        updateBoard(data.gameState);
+        updateBoard(data.gameState, data.winningCombination);
         document.getElementById('status').textContent = `Current Player: ${data.currentPlayer}`;
-      } else if (data.type === 'gameStart') {
-        document.getElementById('status').textContent = `Game started! Current Player: ${data.currentPlayer}`;
-        enableBoard();
-        document.getElementById('restartButton').disabled = false;
       } else if (data.type === 'gameOver') {
         document.getElementById('status').textContent = data.winner === 'draw' ? 'It\'s a draw!' : `Winner: ${data.winner}`;
-        disableBoard();
-      } else if (data.type === 'waitingForPlayer') {
-        document.getElementById('status').textContent = 'Waiting for another player to join...';
+        highlightWinningCells(data.winningCombination);
         disableBoard();
       }
     };
   
-    function updateBoard(gameState) {
+    function updateBoard(gameState, winningCombination) {
       const cells = document.querySelectorAll('.cell');
       cells.forEach((cell, index) => {
         cell.textContent = gameState[index] || '';
         cell.classList.toggle('disabled', gameState[index] !== null);
+        cell.classList.remove('winner');
       });
-    }
-  
-    function disableBoard() {
-      const cells = document.querySelectorAll('.cell');
-      cells.forEach(cell => cell.classList.add('disabled'));
-    }
-  
-    function enableBoard() {
-      const cells = document.querySelectorAll('.cell');
-      cells.forEach(cell => cell.classList.remove('disabled'));
-    }
-  
-    document.getElementById('board').addEventListener('click', (event) => {
-      if (event.target.classList.contains('cell')) {
-        const index = event.target.getAttribute('data-index');
-        ws.send(JSON.stringify({ type: 'makeMove', index }));
+
+      if (winningCombination) {
+        highlightWinningCells(winningCombination);
       }
-    });
+    }
   
-    document.getElementById('restartButton').addEventListener('click', () => {
-      ws.send(JSON.stringify({ type: 'restart' }));
-      document.getElementById('restartButton').disabled = true;
-    });
+    function highlightWinningCells(winningCombination) {
+      if (winningCombination) {
+        winningCombination.forEach(index => {
+          document.querySelector(`.cell[data-index="${index}"]`).classList.add('winner');
+        });
+      }
+    }
   </script>
 </body>
 </html>
