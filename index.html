@@ -42,8 +42,16 @@
       text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.6);
     }
 
+    .players {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
     .board {
       display: grid;
+      justify-content: center;
       grid-template-columns: repeat(3, 100px);
       grid-template-rows: repeat(3, 100px);
       gap: 10px;
@@ -72,13 +80,49 @@
       box-shadow: 0 4px 20px rgba(255, 255, 255, 0.4);
     }
 
+    .cell.disabled {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .winner {
+      background: rgba(0, 255, 0, 0.5) !important;
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.8) !important;
+    }
+
     .status {
       margin-top: 1.5rem;
       font-size: 1rem;
       font-weight: bold;
+      text-shadow: 1px 1px 4px rgba(255, 255, 255, 0.6);
     }
 
-    .restart-button,
+    .restart-button {
+      margin-top: 1.5rem;
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(135deg, #ff416c, #ff4b2b);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(255, 0, 0, 0.4);
+    }
+
+    .restart-button:hover {
+      background: linear-gradient(135deg, #ff1a4d, #ff2200);
+      transform: scale(1.1);
+      box-shadow: 0 4px 20px rgba(255, 0, 0, 0.6);
+    }
+
+    .restart-button:disabled {
+      background: #555;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
     .instructions-button {
       margin-top: 1.5rem;
       padding: 0.8rem 1.5rem;
@@ -93,11 +137,16 @@
       box-shadow: 0 4px 10px rgba(255, 0, 0, 0.4);
     }
 
-    .restart-button:hover,
     .instructions-button:hover {
       background: linear-gradient(135deg, #ff1a4d, #ff2200);
       transform: scale(1.1);
       box-shadow: 0 4px 20px rgba(255, 0, 0, 0.6);
+    }
+
+    .instructions-button:disabled {
+      background: #555;
+      cursor: not-allowed;
+      opacity: 0.7;
     }
 
     .modal {
@@ -126,12 +175,8 @@
     .modal ul {
       list-style: none;
       padding: 0;
-      font-size: 1rem;
+      font-size: 0.9rem;
       line-height: 1.6;
-    }
-
-    .modal ul li {
-      margin-bottom: 8px;
     }
 
     .modal ul li::before {
@@ -166,6 +211,10 @@
 <body>
   <div class="container">
     <h1>Tic Tac Toe</h1>
+    <div class="players">
+      <div class="player" id="player1">Player 1: <span id="player1Symbol"></span></div>
+      <div class="player" id="player2">Player 2: <span id="player2Symbol"></span></div>
+    </div>
     <div class="board" id="board">
       <div class="cell" data-index="0"></div>
       <div class="cell" data-index="1"></div>
@@ -184,24 +233,76 @@
 
   <div class="modal" id="instructionsModal">
     <span class="close-modal" id="closeModal">&times;</span>
-    <h2>📜 How to Play Tic Tac Toe 🕹️</h2>
+    <h2>How to Play</h2>
     <ul>
-      <li>Two players take turns placing their symbols (**X** or **O**).</li>
-      <li>The goal is to get **three in a row** (horizontally, vertically, or diagonally).</li>
-      <li>If all spots are filled without a match, it’s a **draw**.</li>
-      <li>The game shows status updates and the winner.</li>
-      <li>Click **Restart Game** to play again!</li>
+      <li>Two players compete online.</li>
+      <li>Two players can join at a time.</li>
+      <li>Displays symbols (X and O) and status updates.</li>
+      <li>Shows current player turn and results (win, lose, or draw).</li>
+      <li>Players can restart after each match.</li>
+      <li>Enjoy Playing Online.</li>
     </ul>
   </div>
 
   <script>
-    document.getElementById('instructionsButton').addEventListener('click', () => {
-      document.getElementById('instructionsModal').style.display = 'block';
+    const ws = new WebSocket('ws://localhost:8080');
+    let mySymbol;
+    const instructionsModal = document.getElementById('instructionsModal');
+    const instructionsButton = document.getElementById('instructionsButton');
+    const closeModal = document.getElementById('closeModal');
+  
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+  
+      if (data.type === 'assignSymbol') {
+        mySymbol = data.symbol;
+        document.getElementById(`player${data.playerId}Symbol`).textContent = mySymbol;
+        document.getElementById('status').textContent = `You are Player ${data.playerId} (${mySymbol})`;
+      } else if (data.type === 'updateGameState') {
+        updateBoard(data.gameState, data.winningCombination);
+        document.getElementById('status').textContent = `Current Player: ${data.currentPlayer}`;
+      } else if (data.type === 'gameOver') {
+        document.getElementById('status').textContent = data.winner === 'draw' ? 'It\'s a draw!' : `Winner: ${data.winner}`;
+        highlightWinningCells(data.winningCombination);
+        disableBoard();
+      }
+    };
+  
+    function updateBoard(gameState, winningCombination) {
+      const cells = document.querySelectorAll('.cell');
+      cells.forEach((cell, index) => {
+        cell.textContent = gameState[index] || '';
+        cell.classList.toggle('disabled', gameState[index] !== null);
+        cell.classList.remove('winner');
+      });
+
+      if (winningCombination) {
+        highlightWinningCells(winningCombination);
+      }
+    }
+  
+    function highlightWinningCells(winningCombination) {
+      if (winningCombination) {
+        winningCombination.forEach(index => {
+          document.querySelector(`.cell[data-index="${index}"]`).classList.add('winner');
+        });
+      }
+    }
+
+    instructionsButton.addEventListener('click', () => {
+      instructionsModal.style.display = 'block';
     });
 
-    document.getElementById('closeModal').addEventListener('click', () => {
-      document.getElementById('instructionsModal').style.display = 'none';
+    closeModal.addEventListener('click', () => {
+      instructionsModal.style.display = 'none';
     });
+
+    window.addEventListener('click', (event) => {
+      if (event.target === instructionsModal) {
+        instructionsModal.style.display = 'none';
+      }
+    });
+
   </script>
 </body>
 </html>
