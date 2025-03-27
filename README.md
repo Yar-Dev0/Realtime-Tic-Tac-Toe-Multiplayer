@@ -30,7 +30,7 @@ A real-time multiplayer Tic-Tac-Toe game built using **Node.js** and **WebSocket
    - Clone the repository and navigate to the project directory.
    - Run the server using the following command:
      ```bash
-     node server.jsx
+     node server.js
      ```
    - The server will start on `http://localhost:8080`.
 
