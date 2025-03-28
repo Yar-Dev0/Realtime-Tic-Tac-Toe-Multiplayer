@@ -79,7 +79,7 @@ Realtime-Tic-Tac-Toe-Multiplayer/
    ```
 
 4. **Open the Game**:
-   - Open `index.html` in your browser or navigate to `http://localhost:8080` (if serving the file via Express).
+   - Open `index.html` in your browser or navigate to `http://localhost:3000` (if serving the file via Express).
 
 ## How It Works
 
