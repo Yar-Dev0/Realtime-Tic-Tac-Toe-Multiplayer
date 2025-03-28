@@ -93,6 +93,6 @@ function resetGame() {
   currentPlayer = 'X';
 }
 
-server.listen(8080, () => {
-  console.log('Server is running on http://localhost:8080');
+server.listen(3000, () => {
+  console.log('Server is running on http://localhost:3000');
 });
