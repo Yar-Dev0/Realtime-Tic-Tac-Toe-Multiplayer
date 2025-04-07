@@ -89,7 +89,7 @@ function checkWinner() {
 }
 
 function resetGame() {
-  gameState = Array(10).fill(null);
+  gameState = Array(9).fill(null);
   currentPlayer = 'X';
 }
 
