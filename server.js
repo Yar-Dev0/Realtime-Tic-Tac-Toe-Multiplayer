@@ -92,7 +92,3 @@ function resetGame() {
   gameState = Array(9).fill(null);
   currentPlayer = 'X';
 }
-
-server.listen(3000, () => {
-  console.log('Server is running on http://localhost:3000');
-});
