@@ -90,7 +90,6 @@ function checkWinner() {
 
 function resetGame() {
   gameState = Array(9).fill(null);
-  currentPlayer = 'X';
 }
 
 server.listen(3000, () => {
