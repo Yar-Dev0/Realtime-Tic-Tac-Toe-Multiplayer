@@ -64,7 +64,7 @@ Realtime-Tic-Tac-Toe-Multiplayer/
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/your-username/Realtime-Tic-Tac-Toe-Multiplayer.git
+   git clone https://github.com/Yar-Dev0/Realtime-Tic-Tac-Toe-Multiplayer.git
    cd Realtime-Tic-Tac-Toe-Multiplayer
    ```
 
